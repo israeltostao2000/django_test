@@ -1,0 +1,83 @@
+<div class="container">
+    <br>
+    <br>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>LED Toolkit</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <style>
+            #myButton {
+                padding: 10px 20px;
+                background-color: red;
+                color: white;
+                border: none;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <center>
+            <h1>Led</h1>
+            <br>
+            <br>
+            {% if submitted %}
+                Led Test Succefully
+            {% else %}
+                <form action="" method="POST" enctype="multipart/form-data">
+                    
+                    {% csrf_token %}
+                    
+                    {{ form.as_p }}
+                    <input type="submit" value="Submit" class="btn btn-secondary">
+                
+                </form>
+            {% endif %}    
+        
+        <a id="myLink" href="#"><button id="myButton">Click me</button></a>
+    
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script>
+            $(document).ready(function(){
+            // Function to check if certain data exists
+            function checkDataExists(ledId) {
+                $.ajax({
+                    url: `/show_led_result/${ledId}`, // Replace this URL with your own
+                    method: "GET",
+                    success: function(data) {
+                        $("#myButton").css("background-color", "green");
+                        $('#myLink').attr('href', '/show_led_result/' + ledId);
+                        },
+                    error: function() {
+                            // Remain red if data is not retrieved
+                        $("#myButton").css("background-color", "red");
+                        }
+                    });
+            }
+            function fetchLastPrimaryKey() {
+                return $.ajax({
+                    url: "/get_last_primary_key",
+                    method: "GET"
+                });
+            }
+            fetchLastPrimaryKey().done(function(response){
+                var ledId = response.last_pk;
+                
+                // Initial check
+                console.log("last primary key fetched.");
+                checkDataExists(ledId);
+                // Call checkDataExists() every 5 seconds (adjust interval as needed)
+                setInterval(function() {
+                    checkDataExists(ledId);
+                }, 5000); // 5000 milliseconds = 5 seconds
+            }).fail(function() {
+                console.log("Error fetching the last primary key.");
+            });
+
+            
+            });
+        </script>   
+        </center> 
+    </body>
+    
+</div>
