@@ -1,7 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from .forms import ledForm
-from .models import Led, LedResult
+from .models import Led, LedResult, Simulation
 from django.http import HttpResponseRedirect
 
 from django.views.decorators.csrf import csrf_exempt
@@ -9,6 +9,56 @@ from django.views.decorators.http import require_POST
 
 import json
 # Create your views here.
+
+def simulation_pk(request, led_id):
+    # Fetch Simulation objects with the specified 'key' value
+    simulations = Simulation.objects.filter(key=led_id)
+        
+    # Extract primary keys (pk) from the simulations queryset
+    primary_keys = list(simulations.values_list('pk', flat=True))
+    
+    return JsonResponse({'primary_keys': primary_keys})
+@csrf_exempt
+def simulation_result(request, led_id):
+    
+    if request.method == "POST":
+
+        data = json.loads(request.body)
+        key = data.get('key')
+        led_status = data.get('led_status')
+        time = data.get('time')
+        
+
+        # Create and save the model instance
+        led_result = Simulation(key=key, led_status=led_status, time=time)
+        led_result.save()
+        return JsonResponse(data)
+    
+    if request.method== "GET":
+
+            # Fetch the latest entry for the given key
+            led_result = Simulation.objects.filter(pk=led_id).order_by('-time').first()
+            if led_result is None:
+                return JsonResponse({'error': 'Simulation not found'}, status=404)
+
+            data1 = {
+                'key': led_result.key,
+                'led_status': led_result.led_status,
+                'time': led_result.time
+            }
+            return JsonResponse(data1)
+       
+
+
+def simulation_list(request):
+    led_keys = list(LedResult.objects.values_list('key', flat=True).order_by('-key'))
+    return JsonResponse({'led_keys': led_keys})
+
+def led_result(request, led_id):
+    
+    return render(request, 'led/led_Result.html')
+
+
 def home(request):
     responde = {
         "message": "Hey there",
@@ -29,7 +79,7 @@ def get_last_primary_key(request):
 
 def show_led_result(request, led_id):
     
-    if request.method=="POST":
+    if request.method == "POST":
 
         data = json.loads(request.body)
         key = data.get('key')
@@ -53,12 +103,12 @@ def show_led_result(request, led_id):
         }
 
         return JsonResponse(data1)
+    
 
 
 def show_led(request, led_id):
     led_show = Led.objects.get(pk=led_id)
     data = {
-                'key': led_show.key,
                 'title': led_show.title,
                 'time_on': led_show.time_on,
                 'time_off': led_show.time_off,
@@ -74,22 +124,9 @@ def led_form(request):
         form = ledForm(request.POST)
         if form.is_valid():
             
-            form.save()
-            # pk1 = pk.pk
-            # data = {
-            #     'title': pk.title,
-            #     'time_on': pk.time_on,
-            #     'time_off': pk.time_off,
-            #     'simulation_time': pk.simulation_time,
-            # }
             
-
-            #return HttpResponseRedirect('/led')
-            
-            #return JsonResponse(data)
-           
-            # Handle the case where the request failed
-                
+            instance = form.save()
+            return redirect('led_result', led_id=instance.pk)    
     else:
         form = ledForm
         if 'submitted' in request.GET:

@@ -2,6 +2,18 @@ from django.db import models
 
 # Create your models here.
 
+class Simulation(models.Model):
+    key = models.IntegerField('Led key')
+    led_status = models.IntegerField('Led Status')
+    time = models.IntegerField('Led Time')
+
+    def __str__(self):
+        return f"Simulation {self.key}"
+    
+    class Meta:
+        verbose_name_plural = "Simulation"
+
+
 class LedResult(models.Model):
     key = models.IntegerField('Led key')
     times_on = models.IntegerField('Times ON')
@@ -18,7 +30,6 @@ class LedResult(models.Model):
 
 
 class Led(models.Model):
-    key= models.IntegerField('Key')
     title = models.CharField('Led Title', max_length=100, default= 'Untitled')
     time_on = models.IntegerField('Time ON')
     time_off = models.IntegerField('Time OFF')
