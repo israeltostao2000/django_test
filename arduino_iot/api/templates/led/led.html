@@ -4,6 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
         <title>LED Toolkit</title>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
         <style>
@@ -15,68 +16,88 @@
                 cursor: pointer;
             }
         </style>
+        <style>
+            #resultBox {
+                padding: 10px;
+                border: 1px solid #ccc;
+                background-color: #f9f9f9;
+                margin-top: 20px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+        </style>
+        <style>
+            .card-body-scrollable {
+                max-height: 500px; /* Adjust height as needed */
+                overflow-y: auto; /* Enable vertical scrolling */
+            }
+        </style>
+
+
     </head>
     <body>
         <center>
-            <h1>Led</h1>
+            <h1>Led Simulation Toolkit</h1>
             <br>
             <br>
             {% if submitted %}
                 Led Test Succefully
             {% else %}
-                <form action="" method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <form action="" method="POST" enctype="multipart/form-data">
                     
-                    {% csrf_token %}
+                        {% csrf_token %}
+                        
+                        {{ form.as_p }}
+                        <input type="submit" value="Submit" class="btn btn-secondary">
                     
-                    {{ form.as_p }}
-                    <input type="submit" value="Submit" class="btn btn-secondary">
+                    </form>
+                </div>
                 
-                </form>
             {% endif %}    
         
-        <a id="myLink" href="#"><button id="myButton">Click me</button></a>
+        
+       
     
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-        <script>
-            $(document).ready(function(){
-            // Function to check if certain data exists
-            function checkDataExists(ledId) {
-                $.ajax({
-                    url: `/show_led_result/${ledId}`, // Replace this URL with your own
-                    method: "GET",
-                    success: function(data) {
-                        $("#myButton").css("background-color", "green");
-                        $('#myLink').attr('href', '/show_led_result/' + ledId);
-                        },
-                    error: function() {
-                            // Remain red if data is not retrieved
-                        $("#myButton").css("background-color", "red");
-                        }
-                    });
-            }
-            function fetchLastPrimaryKey() {
-                return $.ajax({
-                    url: "/get_last_primary_key",
-                    method: "GET"
-                });
-            }
-            fetchLastPrimaryKey().done(function(response){
-                var ledId = response.last_pk;
-                
-                // Initial check
-                console.log("last primary key fetched.");
-                checkDataExists(ledId);
-                // Call checkDataExists() every 5 seconds (adjust interval as needed)
-                setInterval(function() {
-                    checkDataExists(ledId);
-                }, 5000); // 5000 milliseconds = 5 seconds
-            }).fail(function() {
-                console.log("Error fetching the last primary key.");
-            });
+          
 
+    <div class="card bg-light mb-3" style="max-width: 350px;">
+        <div class="card-body-scrollable">
+            <br>
+            <h3>Previous Simulations</h3>
+            <br>
+            <center><button  align-items="center"; style="max-width: 250px;"class="btn btn-secondary" id="load-led-keys">Load Simulations</button></center>
+            <br>
             
+            <ul id="led-keys-list" class="list-group"></ul>
+        </div>
+        
+    </div>
+    
+    <script>
+        $(document).ready(function(){
+            $('#load-led-keys').click(function(){
+                $.ajax({
+                    url: '{% url "simulation_list" %}',
+                    method: 'GET',
+                    success: function(data) {
+                        var ledKeysList = $('#led-keys-list');
+                        ledKeysList.empty();
+                        data.led_keys.forEach(function(ledKey){
+                            // Create a clickable link for each led key
+                            var listItem = $('<li style="max-width: 350px; " class="list-group-item"></li> ');
+                            var link = $('<a style="color: darkslategray;"></a>').attr('href', '/led_result/' + ledKey).text('Simulation Number: ' + ledKey);
+                            listItem.append(link);
+                            ledKeysList.append(listItem);
+                        });
+                    }
+                });
             });
-        </script>   
+            
+
+        });
+    </script>
         </center> 
     </body>
     
