@@ -1,0 +1,213 @@
+<div class="container">
+    <br>
+    <br>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+        <title>LED Toolkit</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <style>
+            #myButton {
+                padding: 10px 20px;
+                background-color: red;
+                color: white;
+                border: none;
+                cursor: pointer;
+            }
+        </style>
+        <style>
+            #resultBox {
+                padding: 10px;
+                border: 1px solid #ccc;
+                background-color: #f9f9f9;
+                margin-top: 20px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+        </style>
+
+    </head>
+    <body>
+        <center>
+            <h1>Led Simulation Result</h1>
+            <br>
+            <br>
+        
+        
+        <input type="text" id="resultBox" value="No results" readonly>
+    
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script>
+            $(document).ready(function(){
+             // Function to extract LED ID from current URL
+            var previousNumPrimaryKeys = 0;
+            var processedPrimaryKeys = [];
+            
+            var ctx = document.getElementById('ledStatusChart').getContext('2d');
+            var ledStatusChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],  // Time labels will be added dynamically
+                    datasets: [{
+                        label: 'LED Status',
+                        data: [],  // LED Status data will be added dynamically
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        fill: false
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'LED Status'
+                            }
+                        }
+                    }
+                }
+            });
+
+            function getLedIdFromUrl() {
+            // Get the current URL path
+                var path = window.location.pathname;
+            // Extract the LED ID from the URL path (assuming it's the last segment)
+                var parts = path.split('/');
+                var ledId = parts[parts.length - 1]; // Get the last segment of the path
+                return ledId;
+            }
+    
+    
+
+            // Function to check if certain data exists cena do butao <a id="myLink" href="#"><button id="myButton">Click me</button></a>
+            function checkDataExists(ledId) {
+                $.ajax({
+                    url: `/show_led_result/${ledId}`, // Replace this URL with your own
+                    method: "GET",
+                    success: function(data) {
+                        
+                        
+                        
+                        
+                        var resultText = "Key: " + data.key + "     " + "Time ON: " + data.times_on + "     " + "Time off: " + data.times_off + "       " + "Number of Cycles: " + data.number_cycle + "        " + "Simulation Time: " + data.simulation_time;
+                        $("#resultBox").val(resultText);
+                        //$("#resultBox").val('Data exists: ' + JSON.stringify(data));
+                        },
+                    error: function() {
+                            // Remain red if data is not retrieved
+                        console.log("Doesnt Exist.");
+                        $("#resultBox").val('No results');
+                        
+
+                        }
+                    });
+        
+            }
+            var ledId = getLedIdFromUrl();
+            console.log("LED ID:", ledId); // Optional: Log LED ID to console
+            checkDataExists(ledId);
+            //_____________________________________________________________________
+            /**function fetchData(ledId) {
+                $.ajax({
+                    url: '/simulation_result/' + ledId + '/',  // Use the extracted key in the URL
+                    method: 'GET',
+                    success: function (data) {
+                        var time = data.time;  // Assuming 'time' is in the response
+                        var led_status = data.led_status;
+                        var key = data.key;
+
+                        // Check if the key matches the desired key
+                        if (key === parseInt(desiredKey)) {
+                           // Add the new data to the chart
+                            ledStatusChart.data.labels.push(time);
+                            ledStatusChart.data.datasets[0].data.push(led_status);
+
+                            // Update the chart
+                           ledStatusChart.update();
+                        }
+                    },
+                    error: function (error) {
+                        console.log('Error fetching data:', error);
+                    }
+                });
+            }**/
+            function fetchPrimaryKeys(ledId) {
+            $.ajax({
+                url: '/simulation_pk/' + ledId,  // Use the extracted key in the URL
+                method: 'GET',
+                success: function (data) {
+                    var primaryKeys = data.primary_keys;  // Assuming 'primary_keys' is an array of primary keys
+
+                    // Filter out primary keys that have already been processed
+                    var newPrimaryKeys = primaryKeys.filter(function (primaryKey) {
+                        return !processedPrimaryKeys.includes(primaryKey);
+                    });
+
+                    // Fetch simulation data for each new primary key
+                    newPrimaryKeys.forEach(function (primaryKey) {
+                        fetchSimulationData(primaryKey,ledId);
+                        processedPrimaryKeys.push(primaryKey); // Mark as processed
+                    });
+                },
+                error: function (error) {
+                    console.log('Error fetching primary keys:', error);
+                }
+                });
+            }
+
+            // Function to fetch simulation data for a specific primary key and update the chart
+            function fetchSimulationData(primaryKey, ledId) {
+                $.ajax({
+                    url: '/simulation_result/' + primaryKey,  // Use the primary key to fetch simulation data
+                    method: 'GET',
+                    success: function (data) {
+                        var time = data.time;  // Assuming 'time' is in the response
+                        var led_status = data.led_status;
+                        var key = data.key;
+
+                        // Check if the key matches the desired key
+                        if (key === parseInt(ledId)) {
+                            // Add the new data to the chart
+                            ledStatusChart.data.labels.push(time);
+                            ledStatusChart.data.datasets[0].data.push(led_status);
+
+                            // Update the chart
+                            ledStatusChart.update();
+                        }
+                    },
+                    error: function (error) {
+                        console.log('Error fetching simulation data:', error);
+                    }
+                });
+            }
+
+
+            //____________________________
+            setInterval(function() {
+                checkDataExists(ledId);
+                fetchPrimaryKeys(ledId);
+            }, 1000); // 1000 milliseconds = 1 second
+            
+            });
+        </script>   
+        <h1>Live LED Status Graph</h1>
+        <canvas id="ledStatusChart" width="400" height="200"></canvas>
+        <br>
+        <br>
+        <br>
+        <a href="/led" class="btn btn-secondary">Back</a>
+        </center> 
+    </body>
+    
+</div>
